@@ -64,3 +64,11 @@ class BibTeXConverter:
         df = pd.DataFrame(self.data)
         df.to_excel(self.file_path, index=False)
         print(f"Excel file saved successfully at {self.file_path}")
+
+if __name__ == '__main__':
+    document_name = '*IEEE Xplore Citation BibTeX Download*'
+    files_from_path = "/home/d4k/Downloads"
+    file_path = "data/input_excel/IEEE_controllable_text_generation.xlsx"
+    bibtex_converter = BibTeXConverter(document_name=document_name, files_from_path=files_from_path, file_path=file_path)
+    bibtex_converter.convert_to_excel()
+

@@ -221,7 +221,7 @@ class AbstractExtractor:
         else:
             return False
         
-    def store(self, store_path="systematic_review/data/ouput_excel/test_.xlsx"):
+    def store(self, store_path="/home/d4k/Documents/guillermo/doctorado/systematic_review/data/ouput_excel/test_.xlsx"):
         """
         Store the dataframe as an Excel file.
 
@@ -410,15 +410,15 @@ class AbstractExtractor:
                     
                     if self.check_pdf_in_link(link):
                         #Descargar el pdf y utilizar mi modelo o otra tecnica.
-                        self.download_pdf(link,store_path="systematic_review/data/execution_time_data/out.pdf")
-                        abstract=self.extract_abstract_from_pdf(store_path="systematic_review/data/execution_time_data/out.pdf")
+                        self.download_pdf(link,store_path="/home/d4k/Documents/guillermo/doctorado/systematic_review/data/execution_time_data/out.pdf")
+                        abstract=self.extract_abstract_from_pdf(store_path="/home/d4k/Documents/guillermo/doctorado/systematic_review/data/execution_time_data/out.pdf")
                         if abstract is not None:
                             self.dataframe.at[index,abstract_column_name]=abstract
                             break
                     else:
                         abstract=self.abstract_from_DOI(row["DOI"])
                         if abstract is None:
-                            html_content=self.download_html(link,"systematic_review/data/execution_time_data/out.html")
+                            html_content=self.download_html(link,"/home/d4k/Documents/guillermo/doctorado/systematic_review/data/execution_time_data/out.html")
                             if html_content is not None:
                                 abstract=self.find_abstract_element(html_content=html_content)
                                 if abstract is not None:
@@ -606,7 +606,7 @@ class abstractExtractorMistrall:
         if abstract is not None:
             pass
 if __name__=="__main__":
-    result=pd.read_excel("systematic_review/data/ouput_excel/result_WOW_ACM_DBLP_IEEE_final_.xlsx")
+    result=pd.read_excel("/home/d4k/Documents/guillermo/doctorado/systematic_review/data/ouput_excel/result_WOW_ACM_DBLP_IEEE_final_.xlsx")
     test=AbstractExtractor(result)
     # test.populate_DOI()
     # test.store()
