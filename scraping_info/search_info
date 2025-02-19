@@ -46,7 +46,7 @@ DBLP;toxicity detection;https://dblp.org/search?q=toxicity+detection
 DBLP;toxicity detector;https://dblp.org/search/publ/bibtex?q=toxicity%20detector
 DBLP;toxic span detection;https://dblp.org/search/publ/bibtex?q=toxic%20span%20detection
 DBLP;toxic dataset;https://dblp.org/search?q=toxic%20dataset
-DBLP;toxicity dataset;https://www.bibtex.com/c/bibtex-to-excel-converter/
+DBLP;toxicity dataset;https://dblp.org/search?q=toxicity+dataset
 DBLP;mitigate toxicity;https://dblp.org/search?q=mitigate+toxicity
 DBLP;mitigating toxicity;https://dblp.org/search/publ/bibtex?q=mitigating%20toxicity
 DBLP;self-correct;https://dblp.org/search?q=self-correct%20language
@@ -54,8 +54,8 @@ DBLP;detoxify language model;https://dblp.org/search?q=detoxify%20language%20mod
 DBLP;controlled text generation language models;https://dblp.org/search?q=controlled+text+generation+language+models
 DBLP;detoxification;https://dblp.org/search?q=detoxification
 DBLP;counter narrative generation;https://dblp.org/search?q=counter+narrative+generation
-IEEE;toxic "largue language models";https://ieeexplore.ieee.org/search/searchresult.jsp?action=search&newsearch=true&matchBoolean=true&queryText=(%22All%20Metadata%22:toxic%20%22largue%20language%20models%22)
-IEEE;toxicity "largue language models";https://ieeexplore.ieee.org/search/searchresult.jsp?newsearch=true&queryText=toxicity%20%22largue%20language%20models%22
+IEEE;toxic "large language models";https://ieeexplore.ieee.org/search/searchresult.jsp?action=search&newsearch=true&matchBoolean=true&queryText=(%22All%20Metadata%22:toxic%20%22largue%20language%20models%22)
+IEEE;toxicity "large language models";https://ieeexplore.ieee.org/search/searchresult.jsp?newsearch=true&queryText=toxicity%20%22largue%20language%20models%22
 IEEE;toxic transformers;https://ieeexplore.ieee.org/search/searchresult.jsp?queryText=toxic%20transformers&highlight=true&returnFacets=ALL&returnType=SEARCH&matchPubs=true&refinements=ContentType:Conferences&refinements=ContentType:Journals
 IEEE;toxic language detection;https://ieeexplore.ieee.org/search/searchresult.jsp?queryText=toxic%20language%20detection&highlight=true&returnFacets=ALL&returnType=SEARCH&matchPubs=true&rowsPerPage=100&refinements=ContentType:Conferences&refinements=ContentType:Journals
 IEEE;toxic language;https://ieeexplore.ieee.org/search/searchresult.jsp?queryText=toxic%20language&highlight=true&returnType=SEARCH&matchPubs=true&refinements=ContentType:Conferences&refinements=ContentType:Journals&returnFacets=ALL&rowsPerPage=100&pageNumber=1
@@ -72,4 +72,4 @@ IEEE;controlled "text generation" "language model";https://ieeexplore.ieee.org/s
 IEEE;"controllable text generation";https://ieeexplore.ieee.org/search/searchresult.jsp?newsearch=true&queryText=%22controllable%20text%20generation%22
 IEEE;"detoxification" language;https://ieeexplore.ieee.org/search/searchresult.jsp?action=search&newsearch=true&matchBoolean=true&queryText=(%22All%20Metadata%22:detoxification)%20AND%20(%22All%20Metadata%22:language)&ranges=1884_2025_Year
 IEEE;counter narrative generation;https://ieeexplore.ieee.org/search/searchresult.jsp?newsearch=true&queryText=%22counter%20narrative%20generation%22
-ACL;
+ACL;In
