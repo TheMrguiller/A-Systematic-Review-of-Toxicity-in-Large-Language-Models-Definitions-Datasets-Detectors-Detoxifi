@@ -2,7 +2,8 @@ import glob
 import os
 from pybtex.database import parse_file
 import pandas as pd
-
+project_path =os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+from tqdm import tqdm
 class BibTeXConverter:
     """
     A class that converts BibTeX files to Excel format.
@@ -66,9 +67,12 @@ class BibTeXConverter:
         print(f"Excel file saved successfully at {self.file_path}")
 
 if __name__ == '__main__':
-    document_name = '*IEEE Xplore Citation BibTeX Download*'
-    files_from_path = "/home/d4k/Downloads"
-    file_path = "data/input_excel/IEEE_controllable_text_generation.xlsx"
+    # document_name = 'anthology+abstracts'
+    # files_from_path = project_path+"/data/raw_acl_data/"
+    # file_path = "data/raw_acl_data/ACL_database.xlsx"
+    document_name = 'IEEE*'
+    files_from_path = project_path+"/data/ieee/"
+    file_path = "data/input_excel/IEEE_detoxification.xlsx"
     bibtex_converter = BibTeXConverter(document_name=document_name, files_from_path=files_from_path, file_path=file_path)
     bibtex_converter.convert_to_excel()
 
