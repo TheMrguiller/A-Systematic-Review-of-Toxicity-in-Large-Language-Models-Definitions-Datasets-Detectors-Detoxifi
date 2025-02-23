@@ -1,6 +1,8 @@
 import pandas as pd
 import glob
 from copy import deepcopy
+import os
+project_path =os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 
 class ExcelFilesProcessor:
     def __init__(self):
@@ -96,7 +98,11 @@ class ExcelFilesProcessor:
         self.dataframe['title_'] = self.dataframe['title'].str.lower()
         self.dataframe = self.dataframe.drop_duplicates(subset='title_', keep='first')
         self.dataframe.drop(['title_'], axis=1, inplace=True)
-        self.dataframe.to_excel(output_file, index=False)
+        # self.dataframe= self.dataframe[self.dataframe["Publication Date"]!=2025]
+        # mask  = self.dataframe["Publication Date"].apply(lambda x: True if type(x) == float else True if int(x) > 2017 else False)
+        # self.dataframe= self.dataframe[mask]
+        self.dataframe.reset_index(drop=True, inplace=True)
+        self.dataframe.to_csv(output_file, index=False)
 
     def clean_wow_acm_dblp(self):
         """
@@ -169,18 +175,18 @@ class ExcelFilesProcessor:
 
 if __name__ == "__main__":
     processor = ExcelFilesProcessor()
-    dict_titles = {"WOW": "Article Title", "ACM": "Title", "DBLP": "Title", "IEEE": "Title"}
-    for element in ["WOW", "DBLP", "ACM", "IEEE"]:
-        processor.load_files(folder="/home/d4k/Documents/guillermo/doctorado/systematic_review/data/input_excel",
+    dict_titles = {"WOW": "Article Title", "ACM": "Title", "DBLP": "Title", "IEEE": "Title","ACL": "Title"}
+    for element in ["WOW", "DBLP", "ACM", "IEEE", "ACL"]:
+        processor.load_files(folder=project_path+"/data/input_excel",
                               prefix=element)
         processor.eliminate_duplicates_normalize(
-            output_file="/home/d4k/Documents/guillermo/doctorado/systematic_review/data/ouput_excel/" + element + "_joint.xlsx",
+            output_file=project_path+"/data/ouput_excel/" + element + "_joint_.xlsx",
             article_title=dict_titles[element])
-        processor.load_files(folder="/home/d4k/Documents/guillermo/doctorado/systematic_review/data/ouput_excel/",
+        processor.load_files(folder=project_path+"/data/ouput_excel/",
                               prefix=element)
         processor.multiple_dataframes_append(deepcopy(processor.dataframe))
     processor.multiple_dataframes_concat()
     # processor.joint_articles(
     #     output_file="systematic review/data/ouput_excel/result_WOW_ACM_DBLP_IEEE.xlsx")
     processor.joint_articles(
-        output_file="/home/d4k/Documents/guillermo/doctorado/systematic_review/data/ouput_excel/result_WOW_ACM_DBLP_IEEE.xlsx")
+        output_file=project_path+"/data/ouput_excel/result_WOW_ACM_DBLP_IEEE_ACL.csv")

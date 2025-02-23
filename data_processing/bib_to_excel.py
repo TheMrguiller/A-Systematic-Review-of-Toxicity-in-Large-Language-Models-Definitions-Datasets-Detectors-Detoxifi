@@ -70,9 +70,9 @@ if __name__ == '__main__':
     # document_name = 'anthology+abstracts'
     # files_from_path = project_path+"/data/raw_acl_data/"
     # file_path = "data/raw_acl_data/ACL_database.xlsx"
-    document_name = 'IEEE*'
-    files_from_path = project_path+"/data/ieee/"
-    file_path = "data/input_excel/IEEE_detoxification.xlsx"
+    document_name = 'acm*'
+    files_from_path = project_path+"/data/acm/"
+    file_path = "data/input_excel/ACM_title_counter_narrative_generation.xlsx"
     bibtex_converter = BibTeXConverter(document_name=document_name, files_from_path=files_from_path, file_path=file_path)
     bibtex_converter.convert_to_excel()
 

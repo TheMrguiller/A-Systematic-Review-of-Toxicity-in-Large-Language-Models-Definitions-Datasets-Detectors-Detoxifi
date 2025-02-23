@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from requests import get
 
 import random
-
+from googlesearch import search as search_in_google
 
 def get_useragent():
     return random.choice(_useragent_list)
@@ -65,46 +65,51 @@ def search(term, num_results=10, lang="en", proxy=None, advanced=False, sleep_in
         str or SearchResult: The search results. If advanced is True, yields SearchResult objects containing the link, title, and description. Otherwise, yields only the link.
 
     """
-    escaped_term = term.replace(" ", "+")
-
-    # Proxy
-    proxies = None
-    if proxy:
-        if proxy.startswith("https"):
-            proxies = {"https": proxy}
-        else:
-            proxies = {"http": proxy}
-
-    # Fetch
-    start = 0
-    while start < num_results:
+    
         # Send request
-        resp = _req(escaped_term, num_results - start,
-                    lang, start, proxies, timeout)
+    results=search_in_google(term, advanced=True,sleep_interval=1,num_results=num_results,lang=lang)
+    for result in results:
+        yield SearchResult(result.url, result.title, result.description)
 
-        # Parse
-        soup = BeautifulSoup(resp.text, "html.parser")
-        result_block = soup.find_all("div", attrs={"class": "g"})
-        if not result_block:
-            print("No result found")
-            break 
-        for result in result_block:
-            # Find link, title, description
-            link = result.find("a", href=True)
-            title = result.find("h3")
-            description_box = result.find(
-                "div", {"style": "-webkit-line-clamp:2"})
-            if description_box:
-                description = description_box.text
-                if link and title and description:
-                    start += 1
-                    if advanced:
-                        yield SearchResult(link["href"], title.text, description)
-                    else:
-                        yield link["href"]
-            else:
-                start +=1
-        sleep(sleep_interval)
+    # escaped_term = term.replace(" ", "+")
+
+    # # Proxy
+    # proxies = None
+    # if proxy:
+    #     if proxy.startswith("https"):
+    #         proxies = {"https": proxy}
+    #     else:
+    #         proxies = {"http": proxy}
+
+    # # Fetch
+    # start = 0
+    # while start < num_results:
+        # resp = _req(escaped_term, num_results - start,
+        #             lang, start, proxies, timeout)
+
+        # # Parse
+        # soup = BeautifulSoup(resp.text, "html.parser")
+        # result_block = soup.find_all("div", attrs={"class": "yuRUbf"})
+        # if not result_block:
+        #     print("No result found")
+        #     break 
+        # for result in result_block:
+        #     # Find link, title, description
+        #     link = result.find("a", href=True)
+        #     title = result.find("h3")
+        #     description_box = result.find(
+        #         "div", {"style": "-webkit-line-clamp:2"})
+        #     if description_box:
+        #         description = description_box.text
+        #         if link and title and description:
+        #             start += 1
+        #             if advanced:
+        #                 yield SearchResult(link["href"], title.text, description)
+        #             else:
+        #                 yield link["href"]
+        #     else:
+        #         start +=1
+        # sleep(sleep_interval)
 if __name__=='__main__':
     query="SINAI at SemEval-2021 Task 5: Combining Embeddings in a BiLSTM-CRF model for Toxic Spans Detection"
     links=search(query,num_results=10)

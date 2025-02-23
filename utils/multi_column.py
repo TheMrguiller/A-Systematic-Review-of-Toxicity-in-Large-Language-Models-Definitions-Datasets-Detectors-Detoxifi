@@ -212,6 +212,8 @@ def column_boxes(page, footer_margin=50, header_margin=50, no_image_text=True):
             continue
 
         # confirm first line to be horizontal
+        if len(b["lines"]) == 0:
+            continue
         line0 = b["lines"][0]  # get first line
         if line0["dir"] != (1, 0):  # only accept horizontal text
             vert_bboxes.append(bbox)

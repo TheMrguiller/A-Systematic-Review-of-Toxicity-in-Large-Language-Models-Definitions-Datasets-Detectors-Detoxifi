@@ -7,9 +7,9 @@ del path
 from utils.google_search import search,get_useragent
 import requests
 import pdfkit
-import pdfplumber
-from ctransformers import AutoModelForCausalLM
-from transformers import AutoTokenizer
+# import pdfplumber
+# from ctransformers import AutoModelForCausalLM
+# from transformers import AutoTokenizer
 from habanero import Crossref
 from crossref.restful import Works
 from bs4 import BeautifulSoup
@@ -22,6 +22,8 @@ import fitz
 from utils.multi_column import column_boxes
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+from tqdm import tqdm
+project_path =os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 
 class AbstractExtractor:
     def __init__(self,dataframe) -> None:
@@ -77,7 +79,7 @@ class AbstractExtractor:
         self.cr = Crossref()
         self.works = Works()
         
-    def search_link(self, query, num_results=10, proxy=None, sleep_interval=0):
+    def search_link(self, query, num_results=10, proxy=None, sleep_interval=1):
             """
             Search for links using a given query.
 
@@ -90,7 +92,7 @@ class AbstractExtractor:
             Returns:
                 list: A list of links retrieved from the search.
             """
-            links = search(query, num_results=num_results, proxy=proxy, sleep_interval=sleep_interval, advanced=True)
+            links = search(query, num_results=num_results, proxy=proxy, sleep_interval=sleep_interval,timeout=10, advanced=True)
             return links
         
     def get_DOI(self, query):
@@ -221,14 +223,14 @@ class AbstractExtractor:
         else:
             return False
         
-    def store(self, store_path="/home/d4k/Documents/guillermo/doctorado/systematic_review/data/ouput_excel/test_.xlsx"):
+    def store(self, store_path=project_path+"/data/ouput_excel/result_WOW_ACM_DBLP_IEEE_ACL_abstract.csv"):
         """
         Store the dataframe as an Excel file.
 
         Args:
             store_path (str): The path to save the Excel file. Defaults to "test_.xlsx".
         """
-        self.dataframe.to_excel(store_path, index=False)
+        self.dataframe.to_csv(store_path, index=False)
     
     def similarity_score(self, query, result):
         """
@@ -359,7 +361,7 @@ class AbstractExtractor:
         """
         try:
             doc = fitz.open(store_path)
-        except fitz.fitz.FileDataError as e:
+        except fitz.FileDataError as e:
             print(f"Error opening the PDF file: {e}")
             return None
 
@@ -403,22 +405,22 @@ class AbstractExtractor:
         
             rows_with_blank_abstracts = self.dataframe[self.dataframe[abstract_column_name].isnull() | (self.dataframe[abstract_column_name] == '')]
             count=0
-            for index,row in rows_with_blank_abstracts.iterrows():
+            for index,row in tqdm(rows_with_blank_abstracts.iterrows(),total=rows_with_blank_abstracts.shape[0]):
                 query = row['title']
                 links=self.sort_links(self.search_link(query=query,sleep_interval=random.randint(a=5,b=10)),query)
                 for link in links:
                     
                     if self.check_pdf_in_link(link):
                         #Descargar el pdf y utilizar mi modelo o otra tecnica.
-                        self.download_pdf(link,store_path="/home/d4k/Documents/guillermo/doctorado/systematic_review/data/execution_time_data/out.pdf")
-                        abstract=self.extract_abstract_from_pdf(store_path="/home/d4k/Documents/guillermo/doctorado/systematic_review/data/execution_time_data/out.pdf")
+                        self.download_pdf(link,store_path=project_path+"/data/execution_time_data/out.pdf")
+                        abstract=self.extract_abstract_from_pdf(store_path=project_path+"/data/execution_time_data/out.pdf")
                         if abstract is not None:
                             self.dataframe.at[index,abstract_column_name]=abstract
                             break
                     else:
                         abstract=self.abstract_from_DOI(row["DOI"])
                         if abstract is None:
-                            html_content=self.download_html(link,"/home/d4k/Documents/guillermo/doctorado/systematic_review/data/execution_time_data/out.html")
+                            html_content=self.download_html(link,project_path+"/data/execution_time_data/out.html")
                             if html_content is not None:
                                 abstract=self.find_abstract_element(html_content=html_content)
                                 if abstract is not None:
@@ -435,178 +437,179 @@ class AbstractExtractor:
                 count+=1
             self.store()
 
-class abstractExtractorMistrall:
-    #TODO
-    def __init__(self,dataframe,max_token_length,instruction=None) -> None:
-        self.llm = AutoModelForCausalLM.from_pretrained("TheBloke/Mistral-7B-Instruct-v0.1-GGUF", model_file="mistral-7b-instruct-v0.1.Q4_K_M.gguf", model_type="mistral", gpu_layers=100,max_new_tokens = 4096,
-                                           context_length = max_token_length)
-        self.autotokenizer= AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.1")
-        self.abstractExtractor= AbstractExtractor(dataframe=dataframe)
-        if instruction is None:
-            chunk=""
-            instruction=f"""
-                            <s>[INST] You are an expert reader assistant. Your task is to extract the abstract of a research from the given text, and you must provide the abstract exactly as it is formatted. If the provided text does not contain an abstract, the output format must be "No abstract provided."
-                            Text: {chunk}
-                            Abstract:[/INST]</s>
-                            """
-        self.max_token_length=max_token_length-self.instruction_length(instruction,max_token_length)
-    def instruction_length(self,instruction,max_token_length):
-        token_length=len(self.autotokenizer.tokenize(text=instruction,max_length=4096,truncation=False))
-        if token_length>max_token_length:
-            raise Exception("Instruction to long for the model token length size") 
-        else:
-            return token_length
+# class abstractExtractorMistrall:
+#     #TODO
+#     def __init__(self,dataframe,max_token_length,instruction=None) -> None:
+#         self.llm = AutoModelForCausalLM.from_pretrained("TheBloke/Mistral-7B-Instruct-v0.1-GGUF", model_file="mistral-7b-instruct-v0.1.Q4_K_M.gguf", model_type="mistral", gpu_layers=100,max_new_tokens = 4096,
+#                                            context_length = max_token_length)
+#         self.autotokenizer= AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.1")
+#         self.abstractExtractor= AbstractExtractor(dataframe=dataframe)
+#         if instruction is None:
+#             chunk=""
+#             instruction=f"""
+#                             <s>[INST] You are an expert reader assistant. Your task is to extract the abstract of a research from the given text, and you must provide the abstract exactly as it is formatted. If the provided text does not contain an abstract, the output format must be "No abstract provided."
+#                             Text: {chunk}
+#                             Abstract:[/INST]</s>
+#                             """
+#         self.max_token_length=max_token_length-self.instruction_length(instruction,max_token_length)
+#     def instruction_length(self,instruction,max_token_length):
+#         token_length=len(self.autotokenizer.tokenize(text=instruction,max_length=4096,truncation=False))
+#         if token_length>max_token_length:
+#             raise Exception("Instruction to long for the model token length size") 
+#         else:
+#             return token_length
     
-    def extractabstract(self,store_path,pdf_name="out.pdf"):
-        with pdfplumber.open(store_path+pdf_name) as pdf:
-                pages = pdf.pages
-                for page in pages:
-                    text = page.extract_text()
-                    for chunk in self.chunk_text(text):
-                        instruction = f"""
-                            <s>[INST] You are an expert reader assistant. Your task is to extract the abstract of a research from the given text, and you must provide the abstract exactly as it is formatted. If the provided text does not contain an abstract, the output format must be "No abstract provided."
-                            Text: {chunk}
-                            Abstract:[/INST]</s>
-                            """
-                        output=self.llm(instruction,temperature=1.0,seed=42)
-                        if not "No abstract provided" in output:
-                            return output
-                            break
-                return None
-    def chunk_text(self,text):
-        #TODO
-        #Cojo el texto lo divido en parrafos. Cojo todos los parrafos lo convierto a tokens. Inicializo una variable que sea la longitud en tokens que llevo para un chunk
-        # Inicializo una lista con los chunks que llevo y otra donde se iran guardando los chunks finales.
-        #Voy añadiendo poco a poco sumando el tamaño de cada parrafo en tokens a mi variable de longitud. A la vez si la longitud no supera un maximo voy incluyendo los parrafos en el chunk actual.
-        # Si se ha llegado al chunk actual se mete en la lista de chunks y se vacia el chunk actual. La idea es cada vez que se inicie uno nuevo quedarse con el chunk anterior siempre y cuando permita sumarle el siguiente chunk de tokens para mantener el contexto.
-        paragraphs = text.split('\n')
-        current_chunk=""
+#     def extractabstract(self,store_path,pdf_name="out.pdf"):
+#         with pdfplumber.open(store_path+pdf_name) as pdf:
+#                 pages = pdf.pages
+#                 for page in pages:
+#                     text = page.extract_text()
+#                     for chunk in self.chunk_text(text):
+#                         instruction = f"""
+#                             <s>[INST] You are an expert reader assistant. Your task is to extract the abstract of a research from the given text, and you must provide the abstract exactly as it is formatted. If the provided text does not contain an abstract, the output format must be "No abstract provided."
+#                             Text: {chunk}
+#                             Abstract:[/INST]</s>
+#                             """
+#                         output=self.llm(instruction,temperature=1.0,seed=42)
+#                         if not "No abstract provided" in output:
+#                             return output
+#                             break
+#                 return None
+#     def chunk_text(self,text):
+#         #TODO
+#         #Cojo el texto lo divido en parrafos. Cojo todos los parrafos lo convierto a tokens. Inicializo una variable que sea la longitud en tokens que llevo para un chunk
+#         # Inicializo una lista con los chunks que llevo y otra donde se iran guardando los chunks finales.
+#         #Voy añadiendo poco a poco sumando el tamaño de cada parrafo en tokens a mi variable de longitud. A la vez si la longitud no supera un maximo voy incluyendo los parrafos en el chunk actual.
+#         # Si se ha llegado al chunk actual se mete en la lista de chunks y se vacia el chunk actual. La idea es cada vez que se inicie uno nuevo quedarse con el chunk anterior siempre y cuando permita sumarle el siguiente chunk de tokens para mantener el contexto.
+#         paragraphs = text.split('\n')
+#         current_chunk=""
 
-        all_chunks=[]
-        current_token_length=[]
-        for paragraph in paragraphs:
+#         all_chunks=[]
+#         current_token_length=[]
+#         for paragraph in paragraphs:
             
-            # Tokeniza el párrafo completo
-            split_delimeter='\n'
-            paragraph_tokens_length = len(self.autotokenizer.tokenize(text=paragraph+split_delimeter,max_length=self.max_token_length,truncation=False))
-            if paragraph_tokens_length <=self.max_token_length:
-                if sum(current_token_length)+ paragraph_tokens_length >self.max_token_length:
-                    all_chunks.append(current_chunk)
-                    if current_token_length[-1]+paragraph_tokens_length >self.max_token_length:
-                        current_token_length.clear()
-                        current_token_length.append(paragraph_tokens_length)
-                        current_chunk=paragraph+split_delimeter
-                    else:
-                        initial_length=paragraph_tokens_length+current_token_length[-1]
-                        current_token_length.clear()
-                        current_token_length.append(initial_length)
-                        current_chunk=current_chunk.split(split_delimeter)[-1]+split_delimeter+paragraph+split_delimeter
+#             # Tokeniza el párrafo completo
+#             split_delimeter='\n'
+#             paragraph_tokens_length = len(self.autotokenizer.tokenize(text=paragraph+split_delimeter,max_length=self.max_token_length,truncation=False))
+#             if paragraph_tokens_length <=self.max_token_length:
+#                 if sum(current_token_length)+ paragraph_tokens_length >self.max_token_length:
+#                     all_chunks.append(current_chunk)
+#                     if current_token_length[-1]+paragraph_tokens_length >self.max_token_length:
+#                         current_token_length.clear()
+#                         current_token_length.append(paragraph_tokens_length)
+#                         current_chunk=paragraph+split_delimeter
+#                     else:
+#                         initial_length=paragraph_tokens_length+current_token_length[-1]
+#                         current_token_length.clear()
+#                         current_token_length.append(initial_length)
+#                         current_chunk=current_chunk.split(split_delimeter)[-1]+split_delimeter+paragraph+split_delimeter
 
-                else:
+#                 else:
                     
-                    current_chunk+=paragraph+split_delimeter
-                    current_token_length.append(paragraph_tokens_length)
+#                     current_chunk+=paragraph+split_delimeter
+#                     current_token_length.append(paragraph_tokens_length)
                 
-            else:
-                # Si ocurre un error de tokenización, divide el párrafo en oraciones y tokeniza cada oración
-                split_delimeter='.'
-                sentences = paragraph.split(split_delimeter)  # Puedes ajustar esto para manejar otros delimitadores de oraciones
-                current_paragraph = ""
-                for index,sentence in enumerate(sentences):
-                    if index == len(sentences) - 1:
-                        split_delimeter+='\n'
+#             else:
+#                 # Si ocurre un error de tokenización, divide el párrafo en oraciones y tokeniza cada oración
+#                 split_delimeter='.'
+#                 sentences = paragraph.split(split_delimeter)  # Puedes ajustar esto para manejar otros delimitadores de oraciones
+#                 current_paragraph = ""
+#                 for index,sentence in enumerate(sentences):
+#                     if index == len(sentences) - 1:
+#                         split_delimeter+='\n'
                     
-                    sentence_tokens_length = len(self.autotokenizer.tokenize(sentence+split_delimeter,max_length=self.max_token_length,truncation=False))
-                    if sentence_tokens_length <=self.max_token_length:
-                        # Si agregar la oración actual excede el límite max_length, agrega el párrafo actual a la lista y comienza uno nuevo
-                        if sum(current_token_length)+ sentence_tokens_length >self.max_token_length:
-                            if current_paragraph=="":
-                                all_chunks.append(current_chunk)
-                                current_paragraph=sentence+split_delimeter
-                                current_token_length.clear()
-                                current_token_length.append(sentence_tokens_length)
-                            else:
-                                all_chunks.append(current_chunk+current_paragraph)
-                                if current_token_length[-1]+sentence_tokens_length >self.max_token_length:
-                                    current_paragraph=sentence+split_delimeter
-                                    current_token_length.clear()
-                                    current_token_length.append(sentence_tokens_length)
-                                else:
-                                    initial_length=sentence_tokens_length+current_token_length[-1]
-                                    current_token_length.clear()
-                                    current_token_length.append(initial_length)
-                                    current_paragraph=current_paragraph.split(split_delimeter)[-1]+split_delimeter+sentence+split_delimeter
+#                     sentence_tokens_length = len(self.autotokenizer.tokenize(sentence+split_delimeter,max_length=self.max_token_length,truncation=False))
+#                     if sentence_tokens_length <=self.max_token_length:
+#                         # Si agregar la oración actual excede el límite max_length, agrega el párrafo actual a la lista y comienza uno nuevo
+#                         if sum(current_token_length)+ sentence_tokens_length >self.max_token_length:
+#                             if current_paragraph=="":
+#                                 all_chunks.append(current_chunk)
+#                                 current_paragraph=sentence+split_delimeter
+#                                 current_token_length.clear()
+#                                 current_token_length.append(sentence_tokens_length)
+#                             else:
+#                                 all_chunks.append(current_chunk+current_paragraph)
+#                                 if current_token_length[-1]+sentence_tokens_length >self.max_token_length:
+#                                     current_paragraph=sentence+split_delimeter
+#                                     current_token_length.clear()
+#                                     current_token_length.append(sentence_tokens_length)
+#                                 else:
+#                                     initial_length=sentence_tokens_length+current_token_length[-1]
+#                                     current_token_length.clear()
+#                                     current_token_length.append(initial_length)
+#                                     current_paragraph=current_paragraph.split(split_delimeter)[-1]+split_delimeter+sentence+split_delimeter
                                     
                             
-                        else:
-                            current_paragraph += sentence+split_delimeter
-                            current_token_length+= sentence_tokens_length
+#                         else:
+#                             current_paragraph += sentence+split_delimeter
+#                             current_token_length+= sentence_tokens_length
 
-                    else :
-                        # Manejar errores adicionales de tokenización si es necesario
-                        raise Exception(f"Sentence too long for the model: {sentence}")
+#                     else :
+#                         # Manejar errores adicionales de tokenización si es necesario
+#                         raise Exception(f"Sentence too long for the model: {sentence}")
                 
                 
 
-        return all_chunks
+#         return all_chunks
 
     
-    def obtain_pdf(self,link,store_path,pdf_name="out.pdf"):
-        #True indicates correct download
-        if self.abstractExtractor.check_pdf_in_link(link):
-            return self.download_pdf(link=link,store_path=store_path+pdf_name)
-        else:
-            try:
-                pdfkit.from_url(link, store_path+pdf_name)
-                return True
-            except requests.exceptions.HTTPError as e:
-                if e.response.status_code == 403:
-                    print(f"Error 403 Forbidden: Access to {link} is restricted.")
-                else:
-                    print(f"HTTP Error: {e}")
-                return False
+#     def obtain_pdf(self,link,store_path,pdf_name="out.pdf"):
+#         #True indicates correct download
+#         if self.abstractExtractor.check_pdf_in_link(link):
+#             return self.download_pdf(link=link,store_path=store_path+pdf_name)
+#         else:
+#             try:
+#                 pdfkit.from_url(link, store_path+pdf_name)
+#                 return True
+#             except requests.exceptions.HTTPError as e:
+#                 if e.response.status_code == 403:
+#                     print(f"Error 403 Forbidden: Access to {link} is restricted.")
+#                 else:
+#                     print(f"HTTP Error: {e}")
+#                 return False
 
-    def download_pdf(self, store_path,link):
+#     def download_pdf(self, store_path,link):
         
-        response = requests.get(link,timeout=5,headers={
-            "User-Agent": get_useragent() },verify=False)
+#         response = requests.get(link,timeout=5,headers={
+#             "User-Agent": get_useragent() },verify=False)
 
         
-        if response.status_code == 200:
+#         if response.status_code == 200:
             
-            with open(store_path, 'wb') as archivo_local:
-                archivo_local.write(response.content)
-            print(f"PDF store succesfully '{store_path}'")
-            return True
-        else:
-            print(f"Error in PDF download. Code: {response.status_code}")
-            return False
-    def test(self,abstract_column_name='Abstract',title_column_name='title'):
-        rows_with_blank_abstracts = self.abstractExtractor.dataframe[self.abstractExtractor.dataframe[abstract_column_name].isnull() | (self.abstractExtractor.dataframe[abstract_column_name] == '')]
-        count=0
-        for index,row in rows_with_blank_abstracts.iterrows():
-            query = row['title']
-            links=self.abstractExtractor.search_link(query=query,sleep_interval=random.randint(a=5,b=10))
-            for link in links:
-                if self.obtain_pdf(link,"./pdf/"):
-                    #Descargar el pdf y utilizar mi modelo o otra tecnica.
-                    abstract=self.extractabstract("./pdf/")
-                    if abstract is not None:
-                        self.abstractExtractor.dataframe.at[index,abstract_column_name]=abstract
-                        break
+#             with open(store_path, 'wb') as archivo_local:
+#                 archivo_local.write(response.content)
+#             print(f"PDF store succesfully '{store_path}'")
+#             return True
+#         else:
+#             print(f"Error in PDF download. Code: {response.status_code}")
+#             return False
+#     def test(self,abstract_column_name='Abstract',title_column_name='title'):
+#         rows_with_blank_abstracts = self.abstractExtractor.dataframe[self.abstractExtractor.dataframe[abstract_column_name].isnull() | (self.abstractExtractor.dataframe[abstract_column_name] == '')]
+#         count=0
+#         for index,row in rows_with_blank_abstracts.iterrows():
+#             query = row['title']
+#             links=self.abstractExtractor.search_link(query=query,sleep_interval=random.randint(a=5,b=10))
+#             for link in links:
+#                 if self.obtain_pdf(link,"./pdf/"):
+#                     #Descargar el pdf y utilizar mi modelo o otra tecnica.
+#                     abstract=self.extractabstract("./pdf/")
+#                     if abstract is not None:
+#                         self.abstractExtractor.dataframe.at[index,abstract_column_name]=abstract
+#                         break
                 
-                sleep(random.uniform(0.1,3.0))
-            if count%10==0:
-                self.abstractExtractor.store()
-            count+=1
-        self.abstractExtractor.store()
-        pass
-    def test_extract(self):
-        abstract=self.extractabstract("./pdf/")
-        if abstract is not None:
-            pass
+#                 sleep(random.uniform(0.1,3.0))
+#             if count%10==0:
+#                 self.abstractExtractor.store()
+#             count+=1
+#         self.abstractExtractor.store()
+#         pass
+#     def test_extract(self):
+#         abstract=self.extractabstract("./pdf/")
+#         if abstract is not None:
+#             pass
 if __name__=="__main__":
-    result=pd.read_excel("/home/d4k/Documents/guillermo/doctorado/systematic_review/data/ouput_excel/result_WOW_ACM_DBLP_IEEE_final_.xlsx")
+    # result=pd.read_excel(project_path+"/data/ouput_excel/result_WOW_ACM_DBLP_IEEE_ACL_partial_abstract.xlsx")
+    result=pd.read_csv(project_path+"/data/ouput_excel/result_WOW_ACM_DBLP_IEEE_ACL_abstract.csv")
     test=AbstractExtractor(result)
     # test.populate_DOI()
     # test.store()
