@@ -5,7 +5,8 @@ project_path =os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)
 
 if __name__=="__main__":
     df = pd.read_csv(project_path + '/data/annotated_data/annotation_result_4.csv')
-    
+    df["title"] = df["title"].apply(lambda x: x.replace("}", "").replace("{", ""))
+    df.drop_duplicates(subset=["title"], inplace=True)
     print(df["label"].value_counts())
     
     df_ = df[~df["label"].str.contains("out", case=False, na=False)]
